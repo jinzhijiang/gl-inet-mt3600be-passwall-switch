@@ -96,14 +96,11 @@ install_switch() {
 	tar zxf passwall-mt3600be-switch.tar.gz
 	cp passwall.sh /etc/gl-switch.d
 	chmod +x /etc/gl-switch.d/passwall.sh
-	mkdir -p /etc/passwall/switch
-	cp passwall-listener.sh /etc/passwall/switch
-	chmod +x /etc/passwall/switch/passwall-listener.sh
+	# 清理旧版本遗留的 ubus 监听器与 rc.local 启动项(新版直接在开关脚本里启停 passwall,无需常驻进程)
 	if [ -e /etc/rc.local ]; then
-		sed -i '/exit 0/i /etc/passwall/switch/passwall-listener.sh &' "/etc/rc.local"
-	else
-		echo -e "/etc/passwall/switch/passwall-listener.sh &\nexit 0\n" > /etc/rc.local
+		sed -i '/\/etc\/passwall\/switch\/passwall-listener.sh &/d' "/etc/rc.local"
 	fi
+	rm -f /etc/passwall/switch/passwall-listener.sh
 	uci set switch-button.@main[0].func='passwall'
 	uci commit
 	show_reboot_tips '安装'
@@ -116,8 +113,8 @@ uninstall_switch() {
 		file="/etc/rc.local"
 		sed -i '/\/etc\/passwall\/switch\/passwall-listener.sh &/d' "$file"
 	fi
-	rm /etc/passwall/switch/passwall-listener.sh
-	rm /etc/gl-switch.d/passwall.sh
+	rm -f /etc/passwall/switch/passwall-listener.sh
+	rm -f /etc/gl-switch.d/passwall.sh
 	show_reboot_tips '卸载'
 }
 
